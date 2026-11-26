@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* Apple-style tokens. The window itself is real Windows acrylic; these tints sit on top of the blur. */
+  :root {
+    --glass: rgba(246, 246, 248, .42);
+    --card: rgba(255, 255, 255, .62);
+    --card-line: rgba(0, 0, 0, .06);
+    --fill: rgba(118, 118, 128, .12);
+    --thumb: #fff;
+    --hairline: rgba(60, 60, 67, .16);
+    --text: #1d1d1f;
+    --text-2: rgba(60, 60, 67, .62);
+    --text-3: rgba(60, 60, 67, .38);
+    --accent: #007AFF;
+    --green: #34C759;
+    --red: #FF3B30;
+    --bubble-them: rgba(233, 233, 235, .9);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 16px rgba(0, 0, 0, .05);
+    --ease: cubic-bezier(.2, .8, .2, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --glass: rgba(28, 28, 30, .45);
+      --card: rgba(58, 58, 60, .55);
+      --card-line: rgba(255, 255, 255, .07);
+      --fill: rgba(118, 118, 128, .24);
+      --thumb: rgba(99, 99, 102, .9);
+      --hairline: rgba(84, 84, 88, .5);
+      --text: #f5f5f7;
+      --text-2: rgba(235, 235, 245, .62);
+      --text-3: rgba(235, 235, 245, .32);
+      --accent: #0A84FF;
+      --green: #30D158;
+      --red: #FF453A;
+      --bubble-them: rgba(58, 58, 60, .9);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .2), 0 4px 16px rgba(0, 0, 0, .18);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: transparent; }
+  body {
+    display: flex; flex-direction: column; color: var(--text); background: var(--glass);
+    border-left: 1px solid var(--hairline);
+    font: 14px/1.45 "SF Pro Text", -apple-system, Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -.005em;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  svg { width: 1em; height: 1em; flex: none; }
+
+  /* Header: caption + large title, like iOS/macOS */
+  header { padding: 22px 20px 10px; display: flex; align-items: flex-end; gap: 10px; }
+  .titles { flex: 1; min-width: 0; }
+  .caption { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); }
+  h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.1; font-weight: 700; letter-spacing: -.025em; }
+  .round { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--text-2); font-size: 14px; transition: background .2s, transform .2s var(--ease); }
+  .round:hover { background: var(--hairline); }
+  .round:active { transform: scale(.94); }
+
+  /* Segmented control */
+  .seg { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); margin: 6px 20px 14px; padding: 2px; border-radius: 9px; background: var(--fill); }
+  .seg .thumb { position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / 4); border-radius: 7px; background: var(--thumb);
+                box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); transition: transform .3s var(--ease); }
+  .seg button { position: relative; z-index: 1; height: 28px; font-size: 13px; font-weight: 500; color: var(--text); opacity: .75; transition: opacity .2s; }
+  .seg button.on { opacity: 1; font-weight: 600; }
+
+  main { flex: 1; overflow-y: auto; padding: 0 16px 16px; scroll-behavior: smooth; }
+  main::-webkit-scrollbar { width: 8px; }
+  main::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  section { display: none; animation: in .35s var(--ease); }
+  section.on { display: block; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } }
+
+  /* Inset grouped cards */
+  .card { background: var(--card); border: .5px solid var(--card-line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); }
+  .card p { margin: 4px 0; }
+  .card ul { margin: 2px 0; padding: 0; list-style: none; }
+  .card li { position: relative; padding: 5px 0 5px 16px; border-top: .5px solid var(--hairline); }
+  .card li:first-child { border-top: 0; }
+  .card li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: .85; }
+  code { font: 500 12px/1 "SF Mono", ui-monospace, Consolas, monospace; padding: 2px 5px; border-radius: 5px; background: var(--fill); }
+  .card a { color: var(--accent); text-decoration: none; }
+  .card a:hover { text-decoration: underline; }
+  .card.alert { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .spread { justify-content: space-between; }
+  .label { font-size: 12px; color: var(--text-2); }
+  .muted { color: var(--text-2); font-size: 13px; }
+  .err { color: var(--red); }
+  .pre { white-space: pre-wrap; }
+  .sub { display: flex; align-items: center; justify-content: space-between; margin: 2px 4px 8px; }
+  .sub span { font-size: 13px; color: var(--text-2); }
+  .link { color: var(--accent); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Draft approval card */
+  .draft .head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .draft .icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 14px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--fill); color: var(--text-2); }
+  .pill.scheduled { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+  .pill.failed { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+  .btn { height: 32px; padding: 0 16px; border-radius: 99px; font-weight: 600; font-size: 13px; transition: transform .15s var(--ease), filter .2s; }
+  .btn:active { transform: scale(.96); }
+  .btn.fill { background: var(--accent); color: #fff; }
+  .btn.fill:hover { filter: brightness(1.08); }
+  .btn.plain { background: var(--fill); }
+
+  /* Chat bubbles */
+  #chatlog { display: flex; flex-direction: column; gap: 6px; }
+  .bubble { max-width: 86%; padding: 8px 12px; border-radius: 18px; animation: in .3s var(--ease); }
+  .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 6px; }
+  .bubble.them { align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 6px; }
+  .bubble.them h3 { font-size: 13px; margin: 6px 0 2px; }
+  .bubble ul { margin: 2px 0; padding-left: 18px; }
+  .bubble p { margin: 2px 0; }
+  .hint { text-align: center; color: var(--text-3); font-size: 13px; padding: 28px 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+  .chip { padding: 6px 12px; border-radius: 99px; background: var(--card); border: .5px solid var(--card-line); font-size: 13px; }
+  .chip:hover { background: var(--fill); }
+
+  /* Search field */
+  .search { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; margin-bottom: 12px; border-radius: 10px; background: var(--fill); color: var(--text-2); }
+  .search input { flex: 1; border: 0; outline: 0; background: none; font: inherit; color: var(--text); }
+  .tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: var(--fill); color: var(--text-2); }
+
+  /* Skeleton loader */
+  .skel { display: grid; gap: 8px; }
+  .skel i { display: block; height: 11px; border-radius: 6px; background: linear-gradient(90deg, var(--fill) 25%, var(--hairline) 50%, var(--fill) 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite linear; }
+  .skel i:nth-child(2) { width: 85%; } .skel i:nth-child(3) { width: 60%; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* Capsule composer */
+  footer { padding: 10px 14px 14px; border-top: .5px solid var(--hairline); }
+  .composer { display: flex; align-items: flex-end; gap: 4px; min-height: 40px; padding: 4px; border-radius: 20px; background: var(--card); border: .5px solid var(--card-line); box-shadow: var(--shadow); }
+  .composer textarea { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; line-height: 20px; color: var(--text); padding: 6px 4px; resize: none; height: 32px; max-height: 128px; overflow-y: auto; }
+  .composer textarea::placeholder { color: var(--text-3); }
+  #mic { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); font-size: 17px; transition: background .2s, color .2s; }
+  #mic:hover { background: var(--fill); }
+  #mic.rec { background: var(--red); color: #fff; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 55%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+  #send { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 15px; transition: transform .15s var(--ease), opacity .2s; }
+  #send:disabled { opacity: .35; cursor: default; }
+  #send:not(:disabled):active { transform: scale(.92); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="titles">
+      <div class="caption" id="today"></div>
+      <h1 id="title">Today</h1>
+    </div>
+    <button class="round" id="close" title="Close (Esc)" aria-label="Close sidebar"></button>
+  </header>
+
+  <nav class="seg" role="tablist" aria-label="Sections">
+    <span class="thumb" id="thumb"></span>
+    <button role="tab" data-tab="today" data-title="Today" class="on">Today</button>
+    <button role="tab" data-tab="digest" data-title="Digest">Digest</button>
+    <button role="tab" data-tab="chat" data-title="Ask">Ask</button>
+    <button role="tab" data-tab="notes" data-title="Notes">Notes</button>
+  </nav>
+
+  <main id="main">
+    <div id="drafts"></div>
+    <section id="today-tab" class="on">
+      <div id="meetings"></div>
+      <div class="sub"><span>Morning brief</span><button class="link" id="refresh-brief"></button></div>
+      <div id="brief"></div>
+    </section>
+    <section id="digest-tab">
+      <div class="sub"><span>Your topics, from the web</span><button class="link" id="refresh-digest"></button></div>
+      <div id="digest"></div>
+    </section>
+    <section id="chat-tab">
+      <div id="chatlog">
+        <div class="hint" id="chat-hint">Ask about your day, your inbox or your notes.
+          <div class="chips">
+            <button class="chip">What did I work on yesterday?</button>
+            <button class="chip">Any unread emails?</button>
+            <button class="chip">What's on tomorrow?</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="notes-tab">
+      <label class="search"><span id="search-icon"></span><input id="notesearch" placeholder="Search" aria-label="Search notes"></label>
+      <div id="notes"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="composer">
+      <button id="mic" title="Voice note: tap to start, tap to stop" aria-label="Record voice note"></button>
+      <textarea id="ask" rows="1" placeholder="Ask Convoy" autocomplete="off" aria-label="Message"></textarea>
+      <button id="send" aria-label="Send" disabled></button>
+    </div>
+  </footer>
+
+<script>
+const api = () => window.pywebview.api;
+const $ = id => document.getElementById(id);
+
+// SF Symbols-style icons
+const I = {
+  chevron: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+  refresh: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5v3h-3"/></svg>',
+  mic: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>',
+  stop: '<svg viewBox="0 0 16 16"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5" fill="currentColor"/></svg>',
+  up: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2"/></svg>',
+  search: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>',
+  mail: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2" y="3.5" width="12" height="9" rx="2"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>',
+};
+$("close").innerHTML = I.chevron; $("mic").innerHTML = I.mic; $("send").innerHTML = I.up; $("search-icon").innerHTML = I.search;
+$("refresh-brief").innerHTML = I.refresh + "Refresh"; $("refresh-digest").innerHTML = I.refresh + "Refresh";
+
+// Never render model or email text as raw HTML: escape first, then allow a tiny markdown subset.
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function md(src, cards = true) {
+  const out = []; let list = false, open = false;
+  const closeList = () => { if (list) { out.push("</ul>"); list = false; } };
+  const startCard = () => { if (cards) { if (open) out.push("</div>"); out.push('<div class="card">'); open = true; } };
+  for (let line of esc(src).split("\n")) {
+    line = line.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+               .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="#" data-url="$2">$1</a>');
+    const h = line.match(/^#{1,4}\s+(.*)/), li = line.match(/^\s*[-*•]\s+(.*)/);
+    if (h) { closeList(); startCard(); out.push(`<h3>${h[1]}</h3>`); continue; }
+    if (!line.trim()) continue;
+    if (cards && !open) startCard();
+    if (li) { if (!list) { out.push("<ul>"); list = true; } out.push(`<li>${li[1]}</li>`); continue; }
+    closeList(); out.push(`<p>${line}</p>`);
+  }
+  closeList(); if (open) out.push("</div>");
+  return out.join("");
+}
+const SKELETON = '<div class="card skel"><i></i><i></i><i></i></div>';
+
+async function call(name, ...args) {
+  const r = await api()[name](...args);
+  if (!r.ok) throw new Error(r.error);
+  return r.data;
+}
+async function fill(el, name, args = [], cards = true) {
+  el.innerHTML = cards ? SKELETON : '<div class="skel"><i></i><i></i></div>';
+  try { el.innerHTML = md(await call(name, ...args), cards); }
+  catch (e) { el.innerHTML = `<div class="${cards ? "card " : ""}err">${esc(e.message)}</div>`; }
+}
+
+const loadBrief = (refresh = false) => fill($("brief"), "brief", [refresh]);
+let digestLoaded = false;
+const loadDigest = (refresh = false) => { digestLoaded = true; return fill($("digest"), "digest", [refresh]); };
+$("refresh-brief").onclick = () => loadBrief(true);
+$("refresh-digest").onclick = () => loadDigest(true);
+
+// --- Tabs (segmented control)
+const tabs = [...document.querySelectorAll(".seg button")];
+function showTab(name) {
+  const i = tabs.findIndex(b => b.dataset.tab === name);
+  tabs.forEach((b, j) => { b.classList.toggle("on", j === i); b.setAttribute("aria-selected", j === i); });
+  $("thumb").style.transform = `translateX(${i * 100}%)`;
+  $("title").textContent = tabs[i].dataset.title;
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === name + "-tab"));
+  $("main").scrollTop = 0;
+  if (name === "digest" && !digestLoaded) loadDigest();
+  if (name === "notes") loadNotes();
+  ask.placeholder = hint();
+}
+tabs.forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+// --- Drafts: Convoy only writes. "Open in Gmail" opens Gmail's compose window; you press Send there yourself.
+async function loadDrafts() {
+  let list = [];
+  try { list = await call("drafts"); } catch (e) { return; }
+  $("drafts").innerHTML = list.map(d => `
+    <div class="card draft">
+      <div class="head"><span class="icon">${I.mail}</span>
+        <div style="flex:1;min-width:0"><b>${esc(d.subject)}</b><div class="label">To ${esc(d.to_addr)}</div></div>
+        <span class="pill draft">Draft</span></div>
+      <div class="pre muted">${esc(d.body)}</div>
+      <div class="row" style="margin-top:10px"><button class="btn fill" onclick="draftAction('open_draft',${d.id})">Open in Gmail</button><button class="btn plain" onclick="draftAction('discard',${d.id})">Discard</button></div>
+    </div>`).join("");
+}
+async function draftAction(name, id) { await call(name, id); loadDrafts(); }
+
+// --- Chat
+const ask = $("ask");
+const onNotes = () => $("notes-tab").classList.contains("on");
+const hint = () => onNotes() ? "Write a note" : "Ask Convoy";  // on the Notes tab the box saves a note
+function grow() { ask.style.height = "auto"; ask.style.height = Math.min(ask.scrollHeight, 128) + "px"; }
+function clearBox() { ask.value = ""; grow(); $("send").disabled = true; }
+ask.addEventListener("input", () => { grow(); $("send").disabled = !ask.value.trim(); });
+async function send(text) {
+  const msg = (text ?? ask.value).trim();
+  if (!msg) return;
+  if (text === undefined && onNotes()) {
+    clearBox();
+    try { await call("save_note", msg); loadNotes(); }
+    catch (e) { ask.value = msg; grow(); ask.placeholder = e.message; setTimeout(() => ask.placeholder = hint(), 4000); }
+    return;
+  }
+  showTab("chat");
+  $("chat-hint")?.remove();
+  clearBox();
+  const log = $("chatlog");
+  log.insertAdjacentHTML("beforeend", `<div class="bubble me pre">${esc(msg)}</div>`);
+  const reply = document.createElement("div"); reply.className = "bubble them"; log.append(reply);
+  reply.scrollIntoView({ block: "end" });
+  await fill(reply, "chat", [msg], false);
+  reply.scrollIntoView({ block: "end" });
+  ask.focus();
+  loadDrafts();
+}
+$("send").onclick = () => send();
+// Enter sends; Shift+Enter is a new line (and Enter while an IME is composing isn't a send).
+ask.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => send(c.textContent));
+
+// --- Notes + voice
+async function loadNotes() {
+  try {
+    const notes = await call("notes", $("notesearch").value);
+    $("notes").innerHTML = notes.map(n => `<div class="card"><div class="label">${esc(n.when)}</div>${md(n.text, false)}
+      <div class="tags">${(n.tags || "").split(",").filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div></div>`).join("")
+      || '<div class="hint">No notes yet. Type one below, or tap the microphone and talk.</div>';
+  } catch (e) { $("notes").innerHTML = `<div class="card err">${esc(e.message)}</div>`; }
+}
+let t; $("notesearch").addEventListener("input", () => { clearTimeout(t); t = setTimeout(loadNotes, 250); });
+
+let recording = false;
+async function toggleMic() {
+  const mic = $("mic");
+  try {
+    if (!recording) {
+      await call("record_start"); recording = true;
+      mic.classList.add("rec"); mic.innerHTML = I.stop; ask.placeholder = "Listening… tap ■ to stop";
+      return;
+    }
+    recording = false; mic.classList.remove("rec"); mic.disabled = true; ask.placeholder = "Transcribing…";
+    await call("record_stop");
+    showTab("notes");
+  } catch (e) { ask.placeholder = e.message; setTimeout(() => ask.placeholder = hint(), 4000); }
+  finally { if (!recording) { mic.innerHTML = I.mic; mic.disabled = false; if (ask.placeholder === "Transcribing…") ask.placeholder = hint(); } }
+}
+$("mic").onclick = toggleMic;
+
+// Called from Python ~10 minutes before a meeting (no popup: the handle shows a dot).
+function showMeetingBrief(title, text) {
+  $("meetings").insertAdjacentHTML("afterbegin",
+    `<div class="card alert"><div class="label">Starting soon</div><b>${esc(title)}</b>${md(text, false)}</div>`);
+}
+// Called from Python each time the sidebar slides in.
+function onOpen() { setTimeout(() => ask.focus(), 50); loadDrafts(); showToday(); }
+// The app runs for days: on a new day, update the date and fetch that day's brief and digest.
+let shownDay = "";
+function showToday() {
+  const day = new Date().toDateString();
+  if (day === shownDay) return;
+  const newDay = shownDay !== ""; shownDay = day;
+  $("today").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  if (newDay) { loadBrief(); digestLoaded = false; }
+}
+
+$("close").onclick = () => api().hide();
+document.addEventListener("click", e => { const a = e.target.closest("a[data-url]"); if (a) { e.preventDefault(); api().open_link(a.dataset.url); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape") api().hide(); });
+showToday();
+
+window.addEventListener("pywebviewready", () => { loadBrief(); loadDrafts(); setInterval(loadDrafts, 30000); });
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<!-- README screenshots: the real ui/index.html on a fake desktop, fed made-up data (no real inbox, calendar or notes).
+     Serve the repo root (python -m http.server) and open docs/showcase.html?tab=today|digest|chat|notes -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Convoy showcase</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+  body {
+    background:
+      radial-gradient(60% 70% at 12% 18%, #ff7a18 0%, transparent 60%),
+      radial-gradient(55% 60% at 80% 10%, #ff2e63 0%, transparent 62%),
+      radial-gradient(60% 70% at 85% 95%, #7b2ff7 0%, transparent 60%),
+      radial-gradient(50% 60% at 20% 95%, #00c2ff 0%, transparent 60%),
+      linear-gradient(135deg, #2b0a3d, #12002b);
+  }
+  /* A code editor behind the sidebar, so the glass has something to blur. */
+  .editor { position: absolute; left: 70px; top: 80px; width: 980px; height: 760px; border-radius: 14px; overflow: hidden;
+            background: rgba(16, 14, 28, .86); box-shadow: 0 30px 80px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.08); }
+  .bar { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: rgba(255,255,255,.04); color: #a9a3c7; font-size: 13px; }
+  .bar i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .bar span { margin-left: 14px; }
+  pre { margin: 0; padding: 22px 26px; font: 15px/1.75 "JetBrains Mono", Consolas, monospace; color: #e6e1ff; }
+  .k { color: #ff7ab2; } .f { color: #6ee7ff; } .s { color: #ffd166; } .c { color: #7a7499; } .n { color: #b892ff; }
+  .side { position: absolute; top: 0; right: 0; width: 430px; height: 100%;
+          backdrop-filter: blur(40px) saturate(1.8); -webkit-backdrop-filter: blur(40px) saturate(1.8);
+          box-shadow: -20px 0 60px rgba(0,0,0,.25); }
+  .side iframe { width: 100%; height: 100%; border: 0; background: transparent; }
+  .handle { position: absolute; right: 430px; top: 46%; width: 22px; height: 64px; border-radius: 12px 0 0 12px;
+            background: rgba(255,255,255,.8); display: grid; place-items: center; box-shadow: -2px 0 10px rgba(0,0,0,.18); }
+  .handle svg { width: 12px; height: 12px; transform: rotate(180deg); color: rgba(60,60,67,.75); }
+</style>
+</head>
+<body>
+  <div class="editor">
+    <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span>agent.py — convoy</span></div>
+<pre><span class="k">def</span> <span class="f">morning_brief</span>():
+    activity = tracker.<span class="f">summarize_rows</span>(tracker.<span class="f">day_rows</span>(tracker.<span class="f">yesterday</span>()))
+    events   = <span class="f">_safe</span>(google_api.upcoming_events, <span class="n">24</span>)
+    emails   = {<span class="s">"Gmail"</span>: <span class="f">_safe</span>(google_api.search_emails, <span class="s">"in:inbox newer_than:1d"</span>, <span class="n">20</span>)}
+    <span class="k">if</span> imap_mail.<span class="f">configured</span>():
+        emails[imap_mail.<span class="f">account</span>()] = <span class="f">_safe</span>(imap_mail.search_emails, <span class="n">1</span>)
+    tasks    = vault.<span class="f">journal_tasks</span>()   <span class="c"># only lines you marked TODO:</span>
+    <span class="k">return</span> <span class="f">_text</span>(prompt)
+
+<span class="c"># Free-tier quota is per model: fall down the list when one runs out.</span>
+<span class="k">def</span> <span class="f">_with_model</span>(fn):
+    <span class="k">for</span> m <span class="k">in</span> MODELS:
+        <span class="k">try</span>:
+            <span class="k">return</span> fn(m)
+        <span class="k">except</span> genai_errors.ServerError:
+            <span class="k">continue</span>   <span class="c"># overloaded: next model</span>
+
+<span class="c"># Convoy can't send email. It writes drafts;</span>
+<span class="c"># "Open in Gmail" hands them to you.</span>
+<span class="k">def</span> <span class="f">draft_email</span>(to, subject, body) -> <span class="f">str</span>: ...</pre>
+  </div>
+  <div class="handle"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></div>
+  <div class="side"><iframe id="ui" src="../ui/index.html"></iframe></div>
+
+<script>
+// Everything below is made up for the screenshots.
+const BRIEF = `## Yesterday
+- **Convoy model fallback**: agent.py and check.py, about 2h 40m
+- **Q4 pitch deck** in Figma with Priya, about 1h 15m
+- Inbox and Slack triage, about 50m
+
+## Today
+- **11:00** Design review: Q4 deck (Priya, Arjun)
+- **16:30** 1:1 with Rahul
+
+## Tasks
+- Book flights for the Pune offsite (Tue)
+- Follow up with Acme on the invoice (Mon)
+
+## Inbox
+- **Priya Sharma** (Gmail): sent the final deck, wants your notes before 11:00
+- **Acme Corp** (hello@acme.example): quote request for a website rebuild
+- 9 more in Gmail, 3 more in your work inbox: newsletters and receipts
+
+## Suggestions
+- Review Priya's deck before the 11:00 review
+- Reply to Acme with a ballpark today; it's a new lead`;
+
+const DIGEST = `## Indian stock market
+- Nifty and Sensex closed slightly higher, led by IT and banks [1]
+- Foreign investors were net buyers for a third straight session [2]
+
+## Upcoming IPOs
+- Two mainboard IPOs open for bidding this week [3]
+
+## Gold price in India
+- 24K gold edged up on a weaker dollar [4]
+
+## Science
+- A new exoplanet survey found 12 candidate worlds [5]
+
+## Sources
+- [1] [Example News](https://example.com)
+- [2] [Market Daily](https://example.com)
+- [3] [IPO Watch](https://example.com)`;
+
+const NOTES = [
+  { when: "Today 09:12", text: "Call the plumber on Friday about the kitchen leak", tags: "home,errands" },
+  { when: "Yesterday 18:40", text: "Deck feedback for Priya:\n- move pricing slide before the roadmap\n- one chart per slide", tags: "work,q4-deck" },
+  { when: "Mon 21:05", text: "Gift idea for Ananya: a film camera and two rolls", tags: "personal" },
+];
+
+const DRAFTS = [{ id: 1, to_addr: "hello@acme.example", subject: "Re: Website rebuild quote",
+  body: "Hi team,\n\nThanks for reaching out. A rebuild like this usually lands between ₹1.5–2L depending on scope. Happy to do a 20-minute call this week to pin it down.\n\nBest,\nR" }];
+
+const CHAT = `**Yes.** Priya replied at 8:42 am (Gmail):
+- Final deck is attached
+- She wants your notes **before the 11:00 review**
+- Asked whether pricing should move before the roadmap
+
+You noted the same thing yesterday, so that's a quick yes. Want me to draft a reply?`;
+
+const params = new URLSearchParams(location.search);
+const ok = data => Promise.resolve({ ok: true, data });
+const api = {
+  brief: () => ok(BRIEF), digest: () => ok(DIGEST), chat: () => ok(CHAT), notes: () => ok(NOTES),
+  drafts: () => ok(params.get("tab") === "chat" ? DRAFTS : []),
+  open_draft: () => ok([]), discard: () => ok([]), save_note: () => ok(""), hide() {}, open_link() {},
+};
+
+document.getElementById("ui").addEventListener("load", e => {
+  const w = e.target.contentWindow;
+  w.pywebview = { api };
+  w.dispatchEvent(new Event("pywebviewready"));
+  const tab = params.get("tab") || "today";
+  if (tab === "today") w.showMeetingBrief("Design review: Q4 deck · 11:00",
+    "- Priya sent the final deck last night\n- Open question: pricing before roadmap?\n- Raise: one chart per slide");
+  if (tab === "chat") w.send("Did Priya reply about the Q4 deck?");
+  else w.document.querySelector(`[data-tab=${tab}]`).click();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# secrets
+.env
+credentials.json
+token.json
+# your personal data
+*.db
+# python
+.venv/
+__pycache__/

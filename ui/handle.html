@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convoy handle</title>
+<style>
+  :root { --bg: rgba(255,255,255,.78); --line: rgba(0,0,0,.08); --ink: rgba(60,60,67,.75); --dot: #FF3B30; }
+  @media (prefers-color-scheme: dark) { :root { --bg: rgba(44,44,46,.82); --line: rgba(255,255,255,.1); --ink: rgba(235,235,245,.75); } }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; user-select: none; }
+  button {
+    position: absolute; inset: 0 0 0 2px; border: 1px solid var(--line); border-right: 0;
+    border-radius: 12px 0 0 12px; background: var(--bg); color: var(--ink); cursor: pointer; padding: 0;
+    display: grid; place-items: center; box-shadow: -2px 0 10px rgba(0,0,0,.12);
+    transition: transform .2s cubic-bezier(.2,.8,.2,1), background .2s;
+  }
+  button:hover { transform: translateX(-2px); }
+  button:focus-visible { outline: 2px solid #007AFF; outline-offset: -3px; }
+  svg { width: 12px; height: 12px; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+  .open svg { transform: rotate(180deg); }
+  .dot { position: absolute; top: 9px; left: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--dot); display: none; }
+  .has-dot .dot { display: block; }
+  @media (prefers-reduced-motion: reduce) { button, svg { transition: none; } }
+</style>
+</head>
+<body>
+  <button id="h" aria-label="Open Convoy sidebar" title="Convoy (Ctrl+Alt+Space)">
+    <span class="dot"></span>
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg>
+  </button>
+<script>
+  const h = document.getElementById("h");
+  h.onclick = () => window.pywebview.api.toggle();
+  // Called from Python.
+  function setOpen(open) {
+    document.body.classList.toggle("open", open);
+    h.setAttribute("aria-label", open ? "Close Convoy sidebar" : "Open Convoy sidebar");
+    if (open) setDot(false);
+  }
+  function setDot(on) { document.body.classList.toggle("has-dot", on); }
+</script>
+</body>
+</html>
