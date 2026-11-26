@@ -97,25 +97,7 @@ The same 8 tools are exposed over the **Model Context Protocol**, so Claude Desk
 
 ## 🛠️ How it's made
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontFamily':'Inter, Segoe UI, sans-serif','lineColor':'#F16B0D','primaryTextColor':'#ffffff'}}}%%
-flowchart LR
-  UI["🪟 Glass sidebar<br/>pywebview + HTML/JS"]:::ui -->|js_api| APP["⚙️ app.py<br/>hotkey · mic · scheduler"]:::core
-  APP --> AG["🧠 agent.py<br/>Claude ⇄ Gemini<br/>tool calling"]:::brain
-  AG --> T["🧰 tools.py<br/>8 tools"]:::core
-  T --> TR["⏱️ tracker.py<br/>active-window log"]:::data
-  T --> G["📧 Gmail + Calendar<br/>read-only OAuth"]:::ext
-  T --> IM["📨 IMAP inbox<br/>read-only"]:::ext
-  T --> DB[("🗄️ convoy.db<br/>SQLite, local")]:::data
-  T --> V["🧠 Obsidian vault<br/>Markdown"]:::data
-  MCP["🔌 mcp_server.py"]:::brain --> T
-  EXT["Claude Desktop · Cursor"]:::ext -->|MCP| MCP
-  classDef ui fill:#F16B0D,stroke:#F16B0D,color:#fff
-  classDef core fill:#E61416,stroke:#E61416,color:#fff
-  classDef brain fill:#C2187A,stroke:#C2187A,color:#fff
-  classDef data fill:#7B2FF7,stroke:#7B2FF7,color:#fff
-  classDef ext fill:#1d1d1f,stroke:#F16B0D,color:#fff
-```
+<img src="docs/architecture.svg" alt="Architecture: glass sidebar to app.py to agent.py (Claude and Gemini) to tools.py, which reads the activity tracker, Gmail and Calendar, an IMAP inbox, SQLite and an Obsidian vault; an MCP server exposes the same tools to Claude Desktop and Cursor" width="100%">
 
 <details open>
 <summary><b>🧠 The agent: one set of tools, two models, two interfaces</b></summary>

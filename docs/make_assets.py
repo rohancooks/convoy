@@ -90,6 +90,74 @@ text{{font-family:S,'Segoe UI',Helvetica,Arial,sans-serif}}
     (DOCS / "banner.svg").write_text(svg, encoding="utf-8")
 
 
+def architecture():
+    """How the pieces connect, as an animated SVG (GitHub's mermaid renderer is unreliable)."""
+    W, H = 1200, 500
+    col = {"ui": "#F16B0D", "core": "#E61416", "brain": "#C2187A", "data": "#7B2FF7", "ext": "#00A3FF"}
+    nodes = {  # id: (x, y, w, h, kind, title, subtitle)
+        "ui": (36, 200, 210, 96, "ui", "Glass sidebar", "pywebview · HTML/JS"),
+        "app": (296, 200, 190, 96, "core", "app.py", "hotkey · mic · scheduler"),
+        "agent": (536, 200, 210, 96, "brain", "agent.py", "Claude ⇄ Gemini · fallback"),
+        "tools": (796, 200, 150, 96, "core", "tools.py", "8 tools"),
+        "desk": (36, 392, 210, 72, "ext", "Claude Desktop", "Cursor · any MCP client"),
+        "mcp": (296, 392, 190, 72, "brain", "mcp_server.py", "same tools over MCP"),
+    }
+    sources = [("tracker.py", "active-window log", "data"), ("Gmail + Calendar", "read-only OAuth", "ext"),
+               ("IMAP inbox", "read-only, BODY.PEEK", "ext"), ("convoy.db", "SQLite, on your laptop", "data"),
+               ("Obsidian vault", "linked Markdown", "data")]
+    for i, (t, s, k) in enumerate(sources):
+        nodes[f"s{i}"] = (984, 36 + i * 90, 186, 70, k, t, s)
+
+    def mid(n, side):
+        x, y, w, h = nodes[n][:4]
+        return (x + w, y + h / 2) if side == "r" else (x, y + h / 2)
+
+    def edge(a, b, label="", delay=0.0):
+        (x1, y1), (x2, y2) = mid(a, "r"), mid(b, "l")
+        c = (x1 + x2) / 2
+        d = f"M{x1:.0f} {y1:.0f} C{c:.0f} {y1:.0f} {c:.0f} {y2:.0f} {x2:.0f} {y2:.0f}"
+        t = f'<text x="{c:.0f}" y="{(y1 + y2) / 2 - 8:.0f}" text-anchor="middle" font-size="12" fill="#f4f1ee" fill-opacity=".55">{label}</text>' if label else ""
+        return (f'<path d="{d}" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"/>'
+                f'<path d="{d}" fill="none" stroke="url(#g)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="6 10" '
+                f'style="animation:flow 1.2s {delay:.2f}s linear infinite"/>{t}')
+
+    edges = [edge("ui", "app", "js_api"), edge("app", "agent", "", .2), edge("agent", "tools", "tool calls", .4),
+             edge("desk", "mcp", "MCP"), *(edge("tools", f"s{i}", "", .6 + i * .1) for i in range(len(sources)))]
+    (x1, y1), (tx, ty, tw, th) = mid("mcp", "r"), nodes["tools"][:4]  # MCP server calls the same tools
+    edges.append(f'<path d="M{x1:.0f} {y1:.0f} H{tx + tw / 2:.0f} V{ty + th}" fill="none" stroke="url(#g)" stroke-width="2.4" '
+                 f'stroke-dasharray="6 10" style="animation:flow 1.2s .3s linear infinite"/>')
+    boxes = []
+    for i, (x, y, w, h, k, t, s) in enumerate(nodes.values()):
+        c = col[k]
+        boxes.append(f'<g class="up" style="animation-delay:{.05 * i:.2f}s"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c}" '
+                     f'fill-opacity=".14" stroke="{c}" stroke-width="1.5"/><circle cx="{x + 18}" cy="{y + h / 2 - 9}" r="4.5" fill="{c}"/>'
+                     f'<text x="{x + 30}" y="{y + h / 2 - 4}" font-size="17" font-weight="700" fill="#fff">{t}</text>'
+                     f'<text x="{x + 18}" y="{y + h / 2 + 18}" font-size="13" font-weight="500" fill="#f4f1ee" fill-opacity=".7">{s}</text></g>')
+    legend, lx = [], 40
+    for n, c in zip(("interface", "core", "AI", "local data", "external"), col.values()):
+        legend.append(f'<circle cx="{lx}" cy="40" r="5" fill="{c}"/><text x="{lx + 12}" y="45" font-size="13" '
+                      f'font-weight="500" fill="#f4f1ee" fill-opacity=".7">{n}</text>')
+        lx += 40 + len(n) * 7
+    legend = "".join(legend)
+    chars = "".join(t + s for *_, t, s in nodes.values()) + "js_apitool callsMCPinterfacecoreAIlocal dataexternal"
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
+<style>{font_face(chars)}
+text{{font-family:S,'Segoe UI',Helvetica,Arial,sans-serif}}
+.up{{animation:up .8s cubic-bezier(.2,.7,.2,1) both}}
+@keyframes up{{from{{opacity:0;transform:translateY(10px)}}}}
+@keyframes flow{{to{{stroke-dashoffset:-32}}}}
+@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}
+</style>
+<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="{W}" y2="0"><stop offset="0" stop-color="#F16B0D"/><stop offset="1" stop-color="#C2187A"/></linearGradient>
+<pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#fff" fill-opacity=".07"/></pattern>
+<clipPath id="clip"><rect width="{W}" height="{H}" rx="20"/></clipPath></defs>
+<g clip-path="url(#clip)"><rect width="{W}" height="{H}" fill="#070707"/><rect width="{W}" height="{H}" fill="url(#dots)"/>
+{legend}{"".join(edges)}{"".join(boxes)}</g>
+<rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="19.5" fill="none" stroke="#fff" stroke-opacity=".08"/>
+</svg>'''
+    (DOCS / "architecture.svg").write_text(svg, encoding="utf-8")
+
+
 def screenshots():
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT))
     handler.log_message = lambda *a: None
@@ -113,6 +181,7 @@ def gif():
 
 if __name__ == "__main__":
     banner()
+    architecture()
     screenshots()
     gif()
     print("Wrote", ", ".join(p.name for p in sorted(DOCS.glob("*.*")) if p.suffix in (".svg", ".png", ".gif")))
